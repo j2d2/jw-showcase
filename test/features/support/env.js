@@ -20,25 +20,38 @@ var configure = function () {
 
     this.After(function () {
 
-        browser.clearMockModules();
+        browser
+            .clearMockModules();
 
-        browser.executeScript(function () {
-            try {
-                window.localStorage.clear();
-            }catch(e) {}
-        });
-
+        return browser
+            .executeScript(function () {
+                try {
+                    window.localStorage.clear();
+                } catch (e) {
+                }
+            });
     });
 
     this.Before(function () {
 
-        if (!browser.browserName) {
-            return browser
-                .getCapabilities()
-                .then(function (capabilities) {
-                    browser.browserName = capabilities.get('browserName');
-                });
-        }
+        return browser
+            .executeScript(function () {
+                try {
+                    window.localStorage.setItem('jwshowcase.usersettings', '{"cookies":true}');
+                } catch (e) {
+                }
+            })
+            .then(function () {
+                if (!browser.browserName) {
+                    return browser
+                        .getCapabilities()
+                        .then(function (capabilities) {
+                            browser.browserName = capabilities.get('browserName');
+                        });
+                }
+            });
+
+
     })
 };
 

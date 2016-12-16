@@ -61,11 +61,11 @@ Feature: Configuration
     Given I set configLocation to "./fixtures/wrongFeaturedPlaylistConfig.json"
     And I go to the "index" page
     When I do nothing
-    Then I should see an error with message "Feed with id `11223344` does not exist"
+    Then I should see an error with message "Feed with url `https://content.jwplatform.com/feeds/11223344.json` does not exist"
 
   @mobile @tablet @desktop
   Scenario: I use an wrong feedId in playlists
     Given I set configLocation to "./fixtures/wrongPlaylistsConfig.json"
     And I go to the "index" page
     When I do nothing
-    Then I should see an error with message "Feed with id `55667788` does not exist"
+    Then I should see an error with message "Feed with url `https://content.jwplatform.com/feeds/55667788.json` does not exist"

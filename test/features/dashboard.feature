@@ -91,7 +91,7 @@ Feature: Dashboard page
   Scenario: As a user I want to see the title with video count of the feed
     Given I am still on the "index" page
     When I wait until the page has been loaded
-    Then the title of the first default slider should be "Featured Trailers (5)"
+    Then the title of the first default slider should be "Featured Trailers (8)"
 
   @mobile @tablet @desktop
   Scenario: As a user I want to see the title with video count of the feed
