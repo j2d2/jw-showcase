@@ -20,6 +20,12 @@ var EMAIL_SHARE_URL    = 'mailto:';
 
 var stepsDefinition = function () {
 
+    this.When(/^I scroll to the related slider$/, function (callback) {
+
+        scrollToElement('.jw-row[ng-if="vm.recommendationsFeed"]')
+            .then(callback);
+    });
+
     this.When(/^I start video playback$/, function (callback) {
 
         browser
@@ -36,18 +42,10 @@ var stepsDefinition = function () {
                 }
 
                 browser
-                    .findElement(by.css('.jwplayer .jw-display-icon-container'))
+                    .findElement(by.css('.jwplayer .jw-icon-display'))
                     .click()
                     .then(delay(callback, 2000));
             });
-    });
-
-    this.When(/^I click on the navigate back chevron$/, function (callback) {
-
-        browser
-            .findElement(by.css('.jw-button-back'))
-            .click()
-            .then(delay(callback, 2000));
     });
 
     this.When(/^I click on the mobile video viewport$/, function (callback) {
@@ -55,6 +53,31 @@ var stepsDefinition = function () {
         browser
             .findElement(by.css('video'))
             .click()
+            .then(callback);
+    });
+
+    this.When(/^I click on the (\d+)(?:st|nd|rd|th) visible card in the more like this slider$/, function (num, callback) {
+
+        browser
+            .findElements(by.css('.jw-card-slider[feed="vm.feed"] .jw-card-slider-slide.is-visible'))
+            .then(function (elements) {
+
+                if (!elements[num - 1]){
+                    callback();
+                }
+
+                elements[num - 1]
+                    .click()
+                    .then(callback);
+            });
+    });
+
+    this.When(/^I start playing the next playlist item$/, function (callback) {
+
+        browser
+            .executeScript(function () {
+                jwplayer().playlistNext();
+            })
             .then(callback);
     });
 
@@ -69,10 +92,9 @@ var stepsDefinition = function () {
 
         browser
             .executeAsyncScript(function (callback) {
-                var called = false;
-                jwplayer().on('time', function (evt) {
-                    if (!called && evt.position > 2) {
-                        called = true;
+                jwplayer().on('time', function onTime (evt) {
+                    if (evt.position > 1) {
+                        jwplayer().off('time', onTime);
                         callback();
                     }
                 });
@@ -80,23 +102,38 @@ var stepsDefinition = function () {
             .then(callback);
     });
 
-    this.Then(/^the 404 page should be visible$/, function (callback) {
+    this.When(/^I scroll to the more like this slider$/, function (callback) {
 
-        browser
-            .getCurrentUrl()
-            .then(function (url) {
-                expect(url).to.equal(browser.baseUrl + '/404');
-                callback();
-            });
+        scrollToElement('.jw-card-slider[feed="vm.feed"]')
+            .then(callback);
     });
 
-    this.Then(/^seek to the end of video$/, function (callback) {
+    this.When(/^I seek to the end of video$/, function (callback) {
 
         browser
             .executeScript(function () {
                 jwplayer().seek(jwplayer().getDuration());
             })
             .then(callback);
+    });
+
+    this.When(/^I seek to (\d+) seconds/, function (position, callback) {
+
+        browser
+            .executeScript(function (pos) {
+                jwplayer().seek(pos);
+            }, [position])
+            .then(callback);
+    });
+
+    this.Then(/^the video not found page should be visible$/, function (callback) {
+
+        browser
+            .getCurrentUrl()
+            .then(function (url) {
+                expect(url).to.equal(browser.baseUrl + '/video-not-found');
+                callback();
+            });
     });
 
     this.Then(/^I move my mouse over the video$/, function (callback) {
@@ -124,35 +161,6 @@ var stepsDefinition = function () {
             });
     });
 
-    this.Then(/^the "([^"]*)" share button should contain the correct href$/, function (type, callback) {
-
-        var nth,
-            url;
-
-        switch (type) {
-        case 'facebook':
-            nth = 1;
-            url = FACEBOOK_SHARE_URL;
-            break;
-        case 'twitter':
-            nth = 2;
-            url = TWITTER_SHARE_URL;
-            break;
-        case 'email':
-            nth = 3;
-            url = EMAIL_SHARE_URL;
-            break;
-        }
-
-        browser
-            .findElement(by.css('.jw-button-share:nth-child(' + nth + ')'))
-            .getAttribute('href')
-            .then(function (elementHref) {
-                expect(elementHref).to.contain(url);
-                callback();
-            });
-    });
-
     this.Then(/^the index loads$/, function (callback) {
 
         browser
@@ -165,24 +173,35 @@ var stepsDefinition = function () {
 
     this.Then(/^the related videos title is shown$/, function (callback) {
 
-        browser
-            .findElement(by.css('.jw-card-slider-title'))
-            .getAttribute('innerText')
-            .then(function (txt) {
-                expect(txt.trim()).to.equal('More like this (7)');
-                callback();
+        scrollToElement('.jw-row[ng-if="vm.feed"]')
+            .then(function () {
+                browser
+                    .findElement(by.css('.jw-row[ng-if="vm.feed"]'))
+                    .findElement(by.css('.jw-card-slider-flag-default'))
+                    .findElement(by.css('.jw-card-slider-title'))
+                    .getText()
+                    .then(function (title) {
+
+                        // title can contain an icon and multiple whitespaces
+                        title = title
+                            .replace(/\s{2,}/g, ' ')
+                            .trim();
+
+                        expect(title).to.equal('More like this (9)');
+                        callback();
+                    });
             });
     });
 
-    this.Then(/^the video description should show the duration$/, function (callback) {
+    this.Then(/^the video details should show the duration$/, function (callback) {
 
         browser
-            .findElement(by.css('.jw-meta .jw-meta-duration'))
+            .findElement(by.css('.jw-video-details .jw-video-duration'))
             .getText()
             .then(function (txt) {
                 var text = txt.trim().split(' ');
                 expect(text[1]).to.equal('min');
-                expect(text[0]).not.to.be.NaN;
+                expect(isNaN(text[0])).to.equal(false);
                 callback();
             });
     });
@@ -190,11 +209,7 @@ var stepsDefinition = function () {
     this.Then(/^the play icon should be visible$/, function (callback) {
 
         browser
-            .sleep(1000);
-
-        browser
-            .findElement(by.css('.jw-display-icon-container'))
-            .findElement(by.css('.jw-icon-display'))
+            .findElement(by.css('.jw-display-icon-container .jw-icon-display'))
             .isDisplayed()
             .then(function (isDisplayed) {
                 expect(isDisplayed).to.equal(true);
@@ -205,7 +220,7 @@ var stepsDefinition = function () {
     this.Then(/^the video title and description should be visible$/, function (callback) {
 
         browser
-            .findElement(by.css('.jw-meta'))
+            .findElement(by.css('.jw-video-details'))
             .isDisplayed()
             .then(function (isDisplayed) {
                 expect(isDisplayed).to.equal(true);

@@ -50,6 +50,21 @@ module.exports = function () {
             });
     };
 
+    root.scrollToElement = function (selector) {
+
+        return browser
+            .executeScript(function (selector) {
+                var element = document.querySelector(selector);
+
+                if (element) {
+                    angular.element(document.querySelector(".ionic-scroll"))
+                        .scope()
+                        .scrollCtrl
+                        .scrollTo(0, element.offsetTop);
+                }
+            }, selector);
+    };
+
     root.delay = function (fn, time) {
         return function () {
             setTimeout(fn, time);
